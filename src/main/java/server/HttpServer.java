@@ -51,7 +51,14 @@ public class HttpServer {
                 //创建Response对象进行输出
                 Response response = new Response(output);
                 response.setRequest(request);
-                response.sendStaticResource();
+
+                if (request.getUri().startsWith("/servlet/")) {
+                    ServletProcessor servletProcessor = new ServletProcessor();
+                    servletProcessor.process(request, response);
+                } else {
+                    StaticResourceProcessor staticResourceProcessor = new StaticResourceProcessor();
+                    staticResourceProcessor.process(request, response);
+                }
                 //关闭连接
                 socket.close();
             } catch (Exception e) {
