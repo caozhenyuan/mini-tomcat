@@ -2,9 +2,11 @@ package server;
 
 import org.apache.commons.lang3.text.StrSubstitutor;
 
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandler;
@@ -28,7 +30,7 @@ public class ServletProcessor {
         String uri = request.getUri();
         String servletName = uri.substring(uri.lastIndexOf("/") + 1);
         URLClassLoader loader = null;
-        OutputStream output = null;
+        PrintWriter writer = null;
 
         try {
             //create a URLClassLoader
@@ -43,6 +45,14 @@ public class ServletProcessor {
             e.printStackTrace();
         }
 
+        //获取PrintWrite
+        try {
+            response.setCharacterEncoding(StandardCharsets.UTF_8.toString());
+            writer = response.getWriter();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         //由上面的URLClassLoader加载这个Servlet
         Class<?> servletClass;
         try {
@@ -50,25 +60,16 @@ public class ServletProcessor {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        //写响应头
-        output = response.getOutput();
+        //生成返回响应头
         String head = composeResponseHead();
-        try {
-            output.write(head.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writer.println(head);
+
         //创建servlet新实例，然后调用service()，由它来写动态内容到响应体
         Servlet servlet;
         try {
             servlet = (Servlet) servletClass.newInstance();
             servlet.service(request, response);
-        } catch (InstantiationException | IllegalAccessException | IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            output.flush();
-        } catch (Exception e) {
+        } catch (InstantiationException | IllegalAccessException | IOException | ServletException e) {
             e.printStackTrace();
         }
     }
