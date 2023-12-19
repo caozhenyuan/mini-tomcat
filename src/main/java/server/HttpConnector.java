@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * @author czy
@@ -11,6 +13,18 @@ import java.net.Socket;
  * @Deprecated 实现接收网络连接和返回
  **/
 public class HttpConnector implements Runnable {
+
+    int minProcessors = 3;
+
+    int maxProcessors = 10;
+
+    int curProcessors = 0;
+
+
+    /**
+     * 存放多个processors的池子
+     */
+    private Deque<HttpProcessor> processors = new ArrayDeque<>();
 
     @Override
     public void run() {
@@ -24,19 +38,62 @@ public class HttpConnector implements Runnable {
             e.printStackTrace();
             System.exit(1);
         }
+        //initialize processors poll
+        for (int i = 0; i < minProcessors; i++) {
+            HttpProcessor initProcessor = new HttpProcessor(this);
+            initProcessor.start();
+            processors.push(initProcessor);
+        }
+        curProcessors = minProcessors;
+
         while (true) {
             Socket socket;
             try {
                 //接受请求链接,每一个连接生成一个 socket
                 socket = serverSocket.accept();
-                HttpProcessor httpProcessor = new HttpProcessor();
-                httpProcessor.process(socket);
-                //关闭连接
-                socket.close();
+                HttpProcessor processor = createProcessor();
+                if (null == processor) {
+                    socket.close();
+                    continue;
+                }
+                //分配给这个processor
+                processor.assign(socket);
+                //处理完毕后放回池子
+                processors.push(processor);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private HttpProcessor createProcessor() {
+        //从池子中获取一个processor，如果池子为空且小于最大限制，则新建一个
+        synchronized (processors) {
+            if (!processors.isEmpty()) {
+                return processors.pop();
+            }
+            if (curProcessors < maxProcessors) {
+                return newProcessor();
+            } else {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * 新建一个HttpProcessor到池子中
+     *
+     * @return HttpProcessor
+     */
+    private HttpProcessor newProcessor() {
+        HttpProcessor processor = new HttpProcessor(this);
+        processors.push(processor);
+        curProcessors++;
+        return processors.pop();
+    }
+
+    void recycle(HttpProcessor processor) {
+        processors.push(processor);
     }
 
     public void start() {
