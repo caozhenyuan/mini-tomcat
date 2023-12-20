@@ -25,7 +25,7 @@ public class ServletProcessor {
     private static String OKMessage = "HTTP/1.1 ${StatusCode} ${StatusName}\r\n" + "Content-Type: ${ContentType}\r\n" + "Server: minit\r\n" + "Date: ${ZonedDateTime}\r\n" + "\r\n";
 
 
-    public void process(Request request, Response response) {
+    public void process(HttpRequest request, Response response) {
         //首先根据uri最后一个/号来定位，后面的字符串认为是servlet名字
         String uri = request.getUri();
         String servletName = uri.substring(uri.lastIndexOf("/") + 1);

@@ -33,8 +33,8 @@ public class HttpProcessor implements Runnable {
         try {
             input = socket.getInputStream();
             output = socket.getOutputStream();
-            Request request = new Request(input);
-            request.parse();
+            HttpRequest request = new HttpRequest(input);
+            request.parse(socket);
 
             Response response = new Response(output);
             response.setRequest(request);

@@ -14,7 +14,7 @@ import java.util.Locale;
  **/
 public class Response implements ServletResponse {
 
-    private Request request;
+    private HttpRequest request;
 
     private OutputStream output;
 
@@ -33,7 +33,7 @@ public class Response implements ServletResponse {
         this.output = output;
     }
 
-    public void setRequest(Request request) {
+    public void setRequest(HttpRequest request) {
         this.request = request;
     }
 
