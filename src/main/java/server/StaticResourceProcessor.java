@@ -35,7 +35,7 @@ public class StaticResourceProcessor {
      * @param response response
      * @throws IOException io异常
      */
-    public void process(HttpRequest request, Response response) throws IOException {
+    public void process(HttpRequest request, HttpResponse response) throws IOException {
         //处理过程很简单，先将响应头写入输出流，然后从文件中读取内容写入输出流
         byte[] bytes = new byte[BUFFER_SIZE];
         FileInputStream fis = null;

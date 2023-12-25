@@ -140,7 +140,7 @@ public class HttpRequest implements HttpServletRequest {
 
     @Override
     public String getMethod() {
-        return null;
+        return new String(this.requestLine.method, 0, this.requestLine.methodEnd);
     }
 
     @Override
