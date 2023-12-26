@@ -1,5 +1,7 @@
 package server;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -35,6 +37,11 @@ public class HttpProcessor implements Runnable {
             output = socket.getOutputStream();
             HttpRequest request = new HttpRequest(input);
             request.parse(socket);
+
+            //handle session
+            if (StringUtils.isBlank(request.getSessionId())) {
+                request.getSession(true);
+            }
 
             HttpResponse response = new HttpResponse(output);
             response.setRequest(request);

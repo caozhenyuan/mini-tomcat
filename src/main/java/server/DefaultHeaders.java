@@ -7,6 +7,10 @@ package server;
  */
 public class DefaultHeaders {
 
+
+
+    public static final String JSESSIONID_NAME = "jsessionid";
+    public static final String COOKIE_NAME = "cookie";
     static final String HOST_NAME = "host";
     static final String CONNECTION_NAME = "connection";
     static final String ACCEPT_LANGUAGE_NAME = "accept-language";
