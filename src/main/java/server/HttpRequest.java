@@ -50,6 +50,8 @@ public class HttpRequest implements HttpServletRequest {
     String sessionId;
     SessionFacade sessionFacade;
 
+    private HttpResponse response;
+
     public HttpRequest(InputStream input) {
         this.input = input;
         this.sis = new SocketInputStream(this.input, 2048);
@@ -74,7 +76,7 @@ public class HttpRequest implements HttpServletRequest {
         }
         //获取查询串
         String qString = getQueryString();
-        System.out.println("getQueryString:"+qString);
+        System.out.println("getQueryString:" + qString);
         if (!StringUtils.isBlank(qString)) {
             byte[] bytes;
             try {
@@ -203,9 +205,10 @@ public class HttpRequest implements HttpServletRequest {
             uri = new String(requestLine.uri, 0, requestLine.uriEnd);
         }
         //处理参数串中带有jsessionid的情况
-        int semicolon = uri.indexOf(DefaultHeaders.JSESSIONID_NAME);
-        if (semicolon > 0) {
-            sessionId = uri.substring(semicolon + DefaultHeaders.JSESSIONID_NAME.length());
+        String tmp = ";" + DefaultHeaders.JSESSIONID_NAME + "=";
+        int semicolon = uri.indexOf(tmp);
+        if (semicolon >= 0) {
+            sessionId = uri.substring(semicolon + tmp.length());
             uri = uri.substring(0, semicolon);
         }
     }
@@ -223,6 +226,7 @@ public class HttpRequest implements HttpServletRequest {
             }
             String name = new String(header.name, 0, header.nameEnd);
             String value = new String(header.value, 0, header.valueEnd);
+            name = name.toLowerCase();
             // 设置相应的请求头
             if (name.equals(DefaultHeaders.ACCEPT_LANGUAGE_NAME)) {
                 headers.put(name, value);
@@ -234,6 +238,9 @@ public class HttpRequest implements HttpServletRequest {
                 headers.put(name, value);
             } else if (name.equals(DefaultHeaders.CONNECTION_NAME)) {
                 headers.put(name, value);
+                if ("close".equals(value)) {
+                    response.setHeader("Connection", "close");
+                }
             } else if (name.equals(DefaultHeaders.TRANSFER_ENCODING_NAME)) {
                 headers.put(name, value);
             } else if (name.equals(DefaultHeaders.COOKIE_NAME)) {
@@ -674,5 +681,9 @@ public class HttpRequest implements HttpServletRequest {
 
     public String getSessionId() {
         return this.sessionId;
+    }
+
+    public void setResponse(HttpResponse response) {
+        this.response = response;
     }
 }

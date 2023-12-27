@@ -2,6 +2,7 @@ package server;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -17,6 +18,12 @@ public class HttpProcessor implements Runnable {
     private boolean available = false;
 
     private HttpConnector connector;
+
+    private int serverPort = 0;
+
+    private boolean keepAlive = false;
+
+    private boolean http11 = true;
 
     public HttpProcessor(HttpConnector connector) {
         this.connector = connector;
@@ -35,29 +42,51 @@ public class HttpProcessor implements Runnable {
         try {
             input = socket.getInputStream();
             output = socket.getOutputStream();
-            HttpRequest request = new HttpRequest(input);
-            request.parse(socket);
 
-            //handle session
-            if (StringUtils.isBlank(request.getSessionId())) {
-                request.getSession(true);
-            }
+            keepAlive = true;
+            while (keepAlive) {
+                HttpRequest request = new HttpRequest(input);
+                request.parse(socket);
 
-            HttpResponse response = new HttpResponse(output);
-            response.setRequest(request);
+                //handle session
+                if (StringUtils.isBlank(request.getSessionId())) {
+                    request.getSession(true);
+                }
 
-            if (request.getUri().startsWith("/servlet/")) {
-                ServletProcessor servletProcessor = new ServletProcessor();
-                servletProcessor.process(request, response);
-            } else {
-                StaticResourceProcessor staticResourceProcessor = new StaticResourceProcessor();
-                staticResourceProcessor.process(request, response);
+                HttpResponse response = new HttpResponse(output);
+                response.setRequest(request);
+
+                request.setResponse(response);
+
+                try {
+                    response.sendHeaders();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+
+                if (request.getUri().startsWith("/servlet/")) {
+                    ServletProcessor servletProcessor = new ServletProcessor();
+                    servletProcessor.process(request, response);
+                } else {
+                    StaticResourceProcessor staticResourceProcessor = new StaticResourceProcessor();
+                    staticResourceProcessor.process(request, response);
+                }
+                finishResponse(response);
+                System.out.println("response header connection------" + response.getHeader("Connection"));
+                if ("close".equals(response.getHeader("Connection"))) {
+                    keepAlive = false;
+                }
             }
             // 关闭 socket
             socket.close();
+            socket = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void finishResponse(HttpResponse response) {
+        response.finishResponse();
     }
 
     @Override
@@ -65,6 +94,7 @@ public class HttpProcessor implements Runnable {
         while (true) {
             // 等待分配下一个 socket
             Socket socket = await();
+            System.out.println(socket);
             if (null == socket) {
                 continue;
             }

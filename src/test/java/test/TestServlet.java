@@ -1,4 +1,5 @@
 package test;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -6,20 +7,22 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-/**
- * @author czy
- * @date 2023/12/26
- **/
-public class TestServlet extends HttpServlet{
+public class TestServlet extends HttpServlet {
+    static int count = 0;
     private static final long serialVersionUID = 1L;
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException {
         System.out.println("Enter doGet()");
         System.out.println("parameter name : "+request.getParameter("name"));
+        TestServlet.count++;
+        System.out.println("::::::::call count ::::::::: " + TestServlet.count);
+        if (TestServlet.count > 2) {
+            response.addHeader("Connection", "close");
+        }
         HttpSession session = request.getSession(true);
         String user = (String) session.getAttribute("user");
         System.out.println("get user from session : " + user);
-        if (user == null || user.isEmpty()) {
+        if (user == null || user.equals("")) {
             session.setAttribute("user", "yale");
         }
         response.setCharacterEncoding("UTF-8");
