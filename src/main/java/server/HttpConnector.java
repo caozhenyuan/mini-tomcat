@@ -1,9 +1,10 @@
 package server;
 
 import javax.servlet.http.HttpSession;
-import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
@@ -31,10 +32,9 @@ public class HttpConnector implements Runnable {
 
     public static Map<String, HttpSession> sessions = new ConcurrentHashMap<>();
 
-    /**
-     * 一个全局的class loader
-     */
-    public static URLClassLoader loader = null;
+    //这是与connector相关联的container
+    ServletContainer container = null;
+
 
     @Override
     public void run() {
@@ -47,17 +47,6 @@ public class HttpConnector implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }
-        try {
-            //class loader初始化
-            URL[] urls = new URL[1];
-            URLStreamHandler streamHandler = null;
-            File classPath = new File(HttpServer.WEB_ROOT);
-            String repository = (new URL("file", null, classPath.getCanonicalPath() + File.separator)).toString();
-            urls[0] = new URL(null, repository, streamHandler);
-            loader = new URLClassLoader(urls);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         //initialize processors poll
@@ -163,5 +152,13 @@ public class HttpConnector implements Runnable {
     public void start() {
         Thread thread = new Thread(this);
         thread.start();
+    }
+
+    public ServletContainer getContainer() {
+        return container;
+    }
+
+    public void setContainer(ServletContainer container) {
+        this.container = container;
     }
 }

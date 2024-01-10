@@ -65,7 +65,7 @@ public class HttpProcessor implements Runnable {
                 }
 
                 if (request.getUri().startsWith("/servlet/")) {
-                    ServletProcessor servletProcessor = new ServletProcessor();
+                    ServletProcessor servletProcessor = new ServletProcessor(this.connector);
                     servletProcessor.process(request, response);
                 } else {
                     StaticResourceProcessor staticResourceProcessor = new StaticResourceProcessor();
